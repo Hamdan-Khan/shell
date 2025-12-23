@@ -8,6 +8,36 @@ void getCwd(char *buf, size_t size)
 	}
 }
 
+bool startsWith(const char *a, const char *b)
+{
+	return strncmp(a,b,strlen(b)) == 0;
+}
+
+void replaceHomeDir(char *cwd, size_t size, char *homeDir)
+{
+	if (homeDir == NULL){
+		return;
+	}
+	int homeDirLen = strlen(homeDir);
+
+	// home directory can be substituted with ~
+	if (startsWith(cwd,homeDir) &&
+	    (cwd[homeDirLen] == '/' || cwd[homeDirLen] == '\0')){
+		char temp[BUFSIZ];
+		/*
+		 * Updates temp instead of printing.
+		 * Formatter adds an ~ at the start of the modified string
+		 * i.e. cwd + home directory (pointer at the / after homeDir)
+		 */
+		snprintf(temp, sizeof(temp), "~%s", cwd + homeDirLen);
+
+		strncpy(cwd, temp, size-1);
+		cwd[size-1] = "\0";
+	}else{
+		p("debug");
+	}
+}
+
 char *read_line(void)
 {
 	char *buf;
@@ -15,7 +45,9 @@ char *read_line(void)
 	// curr working dir buffer
 	char cwd[BUFSIZ];
 
+	char *homeDir = getenv("HOME");
 	getCwd(cwd, sizeof(cwd));
+	replaceHomeDir(cwd,sizeof(cwd),homeDir);
 
 	p("%s$>", cwd);
 	if (getline(&buf, &buf_size, stdin) == -1){
@@ -30,9 +62,12 @@ int main(){
 	char *line;
 	while(1){
 		line = read_line();
-		p("%s\n", line);
+		if (strcmp(line,"exit\n") == 0){
+			p("Exiting!\n");
+			break;
+		}
+		p("%s", line);
 	}
 
-	printf("Hello world\n");
 	return 0;
 }
