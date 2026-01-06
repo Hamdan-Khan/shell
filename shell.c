@@ -58,27 +58,49 @@ char *read_line(void)
 	return buf;
 }
 
-void tokenize_input(char *input)
+char **tokenize_input(char *input)
 {
-	char *token;
+	size_t bufSize;
 	char *savePtr;
-	token = strtok_r(input, " ", &savePtr);
-	while (token != NULL){
-		p("%s\n", token);
-		token = strtok_r(NULL, " ", &savePtr);
+	char **tokens;
+
+	bufSize = BUFSIZ;
+	tokens = malloc(bufSize * sizeof(char *));
+	if (tokens == NULL) return NULL;
+
+	int i = 0;
+	tokens[i] = strtok_r(input, " ", &savePtr);
+	while (tokens[i] != NULL){
+		tokens[++i] = strtok_r(NULL, " ", &savePtr);
+		// reallocate double memory if it exceeds the current buffer size
+		if (i >= bufSize) {
+			bufSize *= 2;
+			tokens = realloc(tokens, bufSize * sizeof(char *));
+		}
 	}
+	return tokens;
 }
 
 int main(){
 	char *line;
+	char **tokens;
 	while(1){
 		line = read_line();
-		if (strcmp(line,"exit\n") == 0){
+		// ignores crlf at the end of the line
+		line[strlen(line)-1] = '\0';
+
+		if (strcmp(line,"exit") == 0){
 			p("Exiting!\n");
 			break;
 		}
-		tokenize_input(line);
-		p("%s", line);
+		tokens = tokenize_input(line);
+
+		for (int i = 0; tokens[i]; i++){
+			p("%s\n", tokens[i]);
+		}
+
+		free(line);
+		free(tokens);
 	}
 
 	return 0;
