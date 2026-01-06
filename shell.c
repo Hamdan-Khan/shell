@@ -32,7 +32,7 @@ void replaceHomeDir(char *cwd, size_t size, char *homeDir)
 		snprintf(temp, sizeof(temp), "~%s", cwd + homeDirLen);
 
 		strncpy(cwd, temp, size-1);
-		cwd[size-1] = "\0";
+		cwd[size-1] = '\0';
 	}else{
 		p("debug");
 	}
@@ -58,6 +58,17 @@ char *read_line(void)
 	return buf;
 }
 
+void tokenize_input(char *input)
+{
+	char *token;
+	char *savePtr;
+	token = strtok_r(input, " ", &savePtr);
+	while (token != NULL){
+		p("%s\n", token);
+		token = strtok_r(NULL, " ", &savePtr);
+	}
+}
+
 int main(){
 	char *line;
 	while(1){
@@ -66,6 +77,7 @@ int main(){
 			p("Exiting!\n");
 			break;
 		}
+		tokenize_input(line);
 		p("%s", line);
 	}
 
