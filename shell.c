@@ -49,7 +49,7 @@ char *read_line(void)
 	getCwd(cwd, sizeof(cwd));
 	replaceHomeDir(cwd,sizeof(cwd),homeDir);
 
-	p("%s$>", cwd);
+	p(C"%s$> "RST, cwd);
 	if (getline(&buf, &buf_size, stdin) == -1){
 		buf = NULL;
 		p("ERROR OCCURED / EOL");
@@ -81,23 +81,33 @@ char **tokenize_input(char *input)
 	return tokens;
 }
 
+void executeCommand(char **tokens)
+{
+	int i = 0;
+	char *curr;
+	while ((curr = builtinCmds[i].cmdName)){
+		if (strcmp(curr, tokens[0]) == 0){
+			builtinCmds[i].cmd(tokens);
+			return;
+		}
+		i++;
+	}
+
+	// todo: fork and exec
+}
+
 int main(){
 	char *line;
 	char **tokens;
 	while(1){
+		// READ
 		line = read_line();
 		// ignores crlf at the end of the line
 		line[strlen(line)-1] = '\0';
 
-		if (strcmp(line,"exit") == 0){
-			p("Exiting!\n");
-			break;
-		}
+		// EVAL & PRINT
 		tokens = tokenize_input(line);
-
-		for (int i = 0; tokens[i]; i++){
-			p("%s\n", tokens[i]);
-		}
+		executeCommand(tokens);
 
 		free(line);
 		free(tokens);

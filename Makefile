@@ -1,2 +1,2 @@
-shell: shell.c
-	cc shell.c -o shell
+shell: shell.c builtins.c
+	cc shell.c builtins.c -o shell
