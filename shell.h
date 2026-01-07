@@ -26,7 +26,7 @@
 typedef struct
 {
     char *cmdName;
-    int (*cmd)(char **);
+    void (*cmd)(char **);
 } Builtin;
 
 extern Builtin builtinCmds[];

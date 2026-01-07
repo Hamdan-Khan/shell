@@ -40,8 +40,8 @@ void replaceHomeDir(char *cwd, size_t size, char *homeDir)
 
 char *read_line(void)
 {
-	char *buf;
-	size_t buf_size;
+	char *buf = NULL;
+	size_t buf_size = 0;
 	// curr working dir buffer
 	char cwd[BUFSIZ];
 
@@ -51,9 +51,8 @@ char *read_line(void)
 
 	p(C"%s$> "RST, cwd);
 	if (getline(&buf, &buf_size, stdin) == -1){
-		buf = NULL;
-		p("ERROR OCCURED / EOL");
-		p("%s\n", buf);
+		free(buf);
+		return NULL;
 	}
 	return buf;
 }
@@ -83,6 +82,7 @@ char **tokenize_input(char *input)
 
 void executeCommand(char **tokens)
 {
+	// for builtin commands:
 	int i = 0;
 	char *curr;
 	while ((curr = builtinCmds[i].cmdName)){
@@ -93,7 +93,20 @@ void executeCommand(char **tokens)
 		i++;
 	}
 
-	// todo: fork and exec
+	// for external commands:
+	int pid = fork();
+	switch (pid){
+		// couldn't fork
+		case -1:
+			p(RED"An error occured before executing the command"RST);
+			exit(EXIT_FAILURE);
+		// succesfully forked, this branch is for child process
+		case 0:
+			execvp(tokens[0], tokens);
+		// parent process branch, waits for child process to be executed
+		default:
+			wait();
+	}
 }
 
 int main(){
@@ -102,15 +115,26 @@ int main(){
 	while(1){
 		// READ
 		line = read_line();
-		// ignores crlf at the end of the line
-		line[strlen(line)-1] = '\0';
+		if (line == NULL){
+			break;
+		}
 
-		// EVAL & PRINT
-		tokens = tokenize_input(line);
-		executeCommand(tokens);
+		size_t lineSize = strlen(line);
+		if (lineSize > 0 && line[lineSize-1] == '\n'){
+			// removes trailing crlf
+			line[lineSize-1] = '\0';
+		}
+
+		if (line[0] != '\0'){
+			// EVAL & PRINT
+			tokens = tokenize_input(line);
+			if (tokens != NULL){
+				executeCommand(tokens);
+			}
+			free(tokens);
+		}
 
 		free(line);
-		free(tokens);
 	}
 
 	return 0;
